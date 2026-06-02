@@ -1,17 +1,14 @@
 {
-  "name": "uwu-share-site",
+  "name": "uwu-life-journal",
   "version": "1.0.0",
   "private": true,
-  "description": "簡單分享文字與圖片的網站",
+  "description": "簡單的生活記事本，記錄文字與圖片",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "express": "^4.18.4",
-    "express-session": "^1.17.4",
-    "multer": "^2.1.1"
+    "express": "^4.18.4"
   }
 }

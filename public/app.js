@@ -6,16 +6,84 @@ const userPanel = document.getElementById('userPanel');
 const userName = document.getElementById('userName');
 const userRole = document.getElementById('userRole');
 const logoutBtn = document.getElementById('logoutBtn');
-const adminLink = document.getElementById('adminLink');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
 const shareSection = document.getElementById('shareSection');
 const loginRequired = document.getElementById('loginRequired');
+const adminSection = document.getElementById('adminSection');
+const adminUsers = document.getElementById('adminUsers');
 const form = document.getElementById('shareForm');
 const postsContainer = document.getElementById('posts');
 const statusEl = document.getElementById('status');
 const loginStatus = document.getElementById('loginStatus');
 const registerStatus = document.getElementById('registerStatus');
 
+const POSTS_KEY = 'uwu-life-journal-posts';
+const USERS_KEY = 'uwu-life-journal-users';
+const CURRENT_USER_KEY = 'uwu-life-journal-current-user';
+
 let currentUser = null;
+
+function getUsers() {
+  const stored = localStorage.getItem(USERS_KEY);
+  try {
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function getCurrentUser() {
+  const stored = localStorage.getItem(CURRENT_USER_KEY);
+  try {
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCurrentUser(user) {
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+}
+
+function clearCurrentUser() {
+  localStorage.removeItem(CURRENT_USER_KEY);
+}
+
+function getPosts() {
+  const stored = localStorage.getItem(POSTS_KEY);
+  try {
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePosts(posts) {
+  localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+}
+
+function createDefaultAdmin() {
+  const users = getUsers();
+  if (!users.some(user => user.role === 'admin')) {
+    users.push({
+      id: 'admin',
+      name: '管理者',
+      email: 'admin@uwu.local',
+      password: 'admin123',
+      role: 'admin',
+      createdAt: new Date().toISOString()
+    });
+    saveUsers(users);
+  }
+}
+
+function findUserByEmail(email) {
+  return getUsers().find(user => user.email === email.toLowerCase());
+}
 
 function setActiveTab(isLogin) {
   showLoginBtn.classList.toggle('active', isLogin);
@@ -34,18 +102,6 @@ function clearStatus() {
   statusEl.className = 'status';
 }
 
-async function loadCurrentUser() {
-  try {
-    const response = await fetch('/api/users/me');
-    const data = await response.json();
-    currentUser = data.user;
-    updateAuthUI();
-  } catch (err) {
-    currentUser = null;
-    updateAuthUI();
-  }
-}
-
 function updateAuthUI() {
   if (currentUser) {
     userPanel.classList.remove('hidden');
@@ -53,80 +109,16 @@ function updateAuthUI() {
     loginRequired.classList.add('hidden');
     document.getElementById('authForms').classList.add('hidden');
     userName.textContent = currentUser.name;
-    userRole.textContent = currentUser.role;
-    adminLink.classList.toggle('hidden', currentUser.role !== 'admin');
+    userRole.textContent = currentUser.role === 'admin' ? '管理者' : '一般使用者';
+    adminSection.classList.toggle('hidden', currentUser.role !== 'admin');
   } else {
     userPanel.classList.add('hidden');
     shareSection.classList.add('hidden');
     loginRequired.classList.remove('hidden');
     document.getElementById('authForms').classList.remove('hidden');
     setActiveTab(true);
+    adminSection.classList.add('hidden');
   }
-}
-
-async function loadPosts() {
-  try {
-    const response = await fetch('/api/posts');
-    const posts = await response.json();
-    renderPosts(posts);
-  } catch (err) {
-    postsContainer.innerHTML = '<p class="error">無法載入貼文，請稍後再試。</p>';
-  }
-}
-
-function renderPosts(posts) {
-  if (!posts.length) {
-    postsContainer.innerHTML = '<p class="empty">尚未有貼文，快來分享第一則文章！</p>';
-    return;
-  }
-
-  postsContainer.innerHTML = posts
-    .map(post => {
-      const imageHtml = post.image
-        ? `<div class="post-image"><img src="${post.image}" alt="貼文圖片" /></div>`
-        : '';
-
-      const canManage = currentUser && (currentUser.role === 'admin' || currentUser.id === post.authorId);
-      const actionsHtml = canManage
-        ? `<div class="post-actions">
-            <button type="button" class="button-secondary edit-post" data-id="${post.id}">編輯</button>
-            <button type="button" class="button-danger delete-post" data-id="${post.id}">刪除</button>
-          </div>`
-        : '';
-
-      const commentsHtml = (post.comments || []).map(comment => {
-        const canDeleteComment = currentUser && (currentUser.role === 'admin' || currentUser.id === comment.authorId);
-        return `
-          <div class="comment-card">
-            <div class="comment-meta">${escapeHtml(comment.authorName)} · ${new Date(comment.createdAt).toLocaleString()}</div>
-            <div class="comment-text">${escapeHtml(comment.text)}</div>
-            ${canDeleteComment ? `<button type="button" class="button-danger delete-comment" data-post-id="${post.id}" data-comment-id="${comment.id}">刪除留言</button>` : ''}
-          </div>
-        `;
-      }).join('');
-
-      const commentFormHtml = currentUser
-        ? `<form class="comment-form" data-post-id="${post.id}">
-             <label>留言</label>
-             <textarea name="text" rows="2" placeholder="寫下你的留言..." required></textarea>
-             <button type="submit">送出留言</button>
-           </form>`
-        : '<p class="empty">請登入後才能留言。</p>';
-
-      return `
-        <article class="post-card">
-          <div class="post-meta">${escapeHtml(post.authorName)} · ${new Date(post.createdAt).toLocaleString()}</div>
-          <div class="post-text">${escapeHtml(post.text)}</div>
-          ${imageHtml}
-          ${actionsHtml}
-          <div class="comment-list">
-            ${commentsHtml}
-          </div>
-          ${commentFormHtml}
-        </article>
-      `;
-    })
-    .join('');
 }
 
 function escapeHtml(text) {
@@ -135,188 +127,306 @@ function escapeHtml(text) {
   return div.innerHTML.replace(/\n/g, '<br>');
 }
 
-async function loginUser(event) {
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function getVisiblePosts(posts) {
+  return posts.filter(post => {
+    if (post.private) {
+      return currentUser && (currentUser.role === 'admin' || currentUser.id === post.authorId);
+    }
+    return true;
+  });
+}
+
+function renderPosts(posts) {
+  const visiblePosts = getVisiblePosts(posts);
+
+  if (!visiblePosts.length) {
+    postsContainer.innerHTML = '<p class="empty">目前沒有可見的便利貼。</p>';
+    return;
+  }
+
+  postsContainer.innerHTML = visiblePosts
+    .map(post => {
+      const imageHtml = post.image
+        ? `<div class="post-image"><img src="${post.image}" alt="生活圖片" /></div>`
+        : '';
+
+      const canDelete = currentUser && (currentUser.role === 'admin' || currentUser.id === post.authorId);
+      const deleteButton = canDelete
+        ? `<button type="button" class="button-danger delete-post" data-id="${post.id}">刪除</button>`
+        : '';
+
+      const authorHtml = post.authorName
+        ? `<div class="post-author">${escapeHtml(post.authorName)} 的便利貼</div>`
+        : '';
+
+      const moodHtml = post.mood
+        ? `<div class="post-detail">心情：${escapeHtml(post.mood)}</div>`
+        : '';
+
+      const privacyHtml = post.private
+        ? `<div class="post-detail post-private">私人便利貼</div>`
+        : `<div class="post-detail post-public">公開便利貼</div>`;
+
+      return `
+        <article class="post-card" style="background:${post.color || '#fef192'}">
+          <div class="post-meta">${new Date(post.createdAt).toLocaleString()}</div>
+          ${authorHtml}
+          ${moodHtml}
+          ${privacyHtml}
+          <div class="post-text">${escapeHtml(post.text)}</div>
+          ${imageHtml}
+          ${deleteButton}
+        </article>
+      `;
+    })
+    .join('');
+}
+
+function renderAdminUsers() {
+  const users = getUsers();
+  if (!users.length) {
+    adminUsers.innerHTML = '<p>目前沒有使用者資料。</p>';
+    return;
+  }
+
+  adminUsers.innerHTML = `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>名稱</th>
+          <th>信箱</th>
+          <th>角色</th>
+          <th>註冊時間</th>
+          <th>動作</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${users
+          .map(user => `
+            <tr>
+              <td>${escapeHtml(user.name)}</td>
+              <td>${escapeHtml(user.email)}</td>
+              <td>${user.role === 'admin' ? '管理者' : '使用者'}</td>
+              <td>${new Date(user.createdAt).toLocaleString()}</td>
+              <td>${user.id !== currentUser.id ? `<button type="button" class="button-danger delete-user" data-id="${user.id}">刪除</button>` : ''}</td>
+            </tr>
+          `)
+          .join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function initializeApp() {
+  createDefaultAdmin();
+  currentUser = getCurrentUser();
+  updateAuthUI();
+  renderPosts(getPosts());
+  if (currentUser && currentUser.role === 'admin') {
+    renderAdminUsers();
+  }
+}
+
+function loginUser(event) {
   event.preventDefault();
   loginStatus.textContent = '';
-  const formData = new FormData(loginForm);
 
-  try {
-    const response = await fetch('/api/users/login', {
-      method: 'POST',
-      body: new URLSearchParams(formData)
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setStatus(loginStatus, data.error || '登入失敗', 'error');
-      return;
-    }
-    currentUser = data.user;
-    updateAuthUI();
-    setStatus(loginStatus, '登入成功！', 'success');
-    loginForm.reset();
-    loadPosts();
-  } catch (err) {
-    setStatus(loginStatus, '網路錯誤，請稍後再試。', 'error');
+  const email = loginForm.email.value.trim().toLowerCase();
+  const password = loginForm.password.value;
+  const user = findUserByEmail(email);
+
+  if (!user || user.password !== password) {
+    setStatus(loginStatus, '信箱或密碼不正確。', 'error');
+    return;
   }
+
+  currentUser = user;
+  saveCurrentUser(user);
+  updateAuthUI();
+  loginForm.reset();
+  renderPosts(getPosts());
+  if (currentUser.role === 'admin') renderAdminUsers();
+  setStatus(loginStatus, '登入成功！', 'success');
 }
 
-async function registerUser(event) {
+function registerUser(event) {
   event.preventDefault();
   registerStatus.textContent = '';
-  const formData = new FormData(registerForm);
 
-  try {
-    const response = await fetch('/api/users/register', {
-      method: 'POST',
-      body: new URLSearchParams(formData)
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setStatus(registerStatus, data.error || '註冊失敗', 'error');
-      return;
-    }
-    currentUser = data.user;
-    updateAuthUI();
-    setStatus(registerStatus, '註冊成功！', 'success');
-    registerForm.reset();
-    loadPosts();
-  } catch (err) {
-    setStatus(registerStatus, '網路錯誤，請稍後再試。', 'error');
+  const name = registerForm.name.value.trim();
+  const email = registerForm.email.value.trim().toLowerCase();
+  const password = registerForm.password.value;
+
+  if (!name || !email || !password) {
+    setStatus(registerStatus, '請完整填寫所有欄位。', 'error');
+    return;
   }
+
+  if (findUserByEmail(email)) {
+    setStatus(registerStatus, '此信箱已被使用。', 'error');
+    return;
+  }
+
+  const users = getUsers();
+  const newUser = {
+    id: Date.now().toString(),
+    name,
+    email,
+    password,
+    role: 'user',
+    createdAt: new Date().toISOString()
+  };
+  users.push(newUser);
+  saveUsers(users);
+  currentUser = newUser;
+  saveCurrentUser(newUser);
+  registerForm.reset();
+  updateAuthUI();
+  renderPosts(getPosts());
+  setStatus(registerStatus, '註冊成功，已登入。', 'success');
 }
 
-async function logoutUser() {
-  try {
-    await fetch('/api/users/logout', { method: 'POST' });
-  } catch (err) {
-    // ignore
-  }
+function logoutUser() {
+  clearCurrentUser();
   currentUser = null;
   updateAuthUI();
-  loadPosts();
+  renderPosts(getPosts());
 }
 
 async function submitPost(event) {
   event.preventDefault();
-  clearStatus();
-  const formData = new FormData(form);
+  statusEl.textContent = '';
 
-  try {
-    const response = await fetch('/api/posts', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setStatus(statusEl, data.error || '貼文送出失敗。', 'error');
+  if (!currentUser) {
+    statusEl.textContent = '請先登入再新增便利貼。';
+    statusEl.className = 'status error';
+    return;
+  }
+
+  const text = form.text.value.trim();
+  if (!text) {
+    statusEl.textContent = '請輸入生活記事內容。';
+    statusEl.className = 'status error';
+    return;
+  }
+
+  const mood = form.mood.value;
+  const color = form.color.value;
+  const privacy = form.privacy.value === 'private';
+  let image = null;
+  const file = form.image.files[0];
+  if (file) {
+    try {
+      image = await readFileAsDataUrl(file);
+    } catch (err) {
+      statusEl.textContent = '圖片讀取失敗，請重試。';
+      statusEl.className = 'status error';
       return;
     }
-    form.reset();
-    setStatus(statusEl, '分享成功！', 'success');
-    loadPosts();
-  } catch (err) {
-    setStatus(statusEl, '網路錯誤，請稍後再試。', 'error');
   }
+
+  const posts = getPosts();
+  posts.unshift({
+    id: Date.now().toString(),
+    authorId: currentUser.id,
+    authorName: currentUser.name,
+    text,
+    mood,
+    color,
+    private: privacy,
+    image,
+    createdAt: new Date().toISOString()
+  });
+  savePosts(posts);
+
+  form.reset();
+  statusEl.textContent = '已儲存便利貼！';
+  statusEl.className = 'status success';
+  renderPosts(posts);
 }
 
-async function handleEditPost(postId, currentText) {
-  const text = window.prompt('編輯貼文內容', currentText);
-  if (text === null) return;
-  const trimmed = text.trim();
-  if (!trimmed) {
-    return alert('貼文內容不可為空');
+function deletePost(postId) {
+  const posts = getPosts();
+  const target = posts.find(post => post.id === postId);
+  if (!target) return;
+  if (!currentUser || (currentUser.role !== 'admin' && currentUser.id !== target.authorId)) {
+    return;
   }
-
-  try {
-    const response = await fetch(`/api/posts/${postId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: trimmed })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      return alert(data.error || '無法更新貼文');
-    }
-    loadPosts();
-  } catch (err) {
-    alert('網路錯誤，請稍後再試。');
-  }
+  const nextPosts = posts.filter(post => post.id !== postId);
+  savePosts(nextPosts);
+  renderPosts(nextPosts);
 }
 
-async function handleDeletePost(postId) {
-  if (!window.confirm('確定要刪除這則貼文嗎？')) return;
-  try {
-    const response = await fetch(`/api/posts/${postId}`, { method: 'DELETE' });
-    const data = await response.json();
-    if (!response.ok) {
-      return alert(data.error || '刪除失敗');
-    }
-    loadPosts();
-  } catch (err) {
-    alert('網路錯誤，請稍後再試。');
-  }
+function downloadCsv(filename, csv) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
-async function handleAddComment(postId, textArea) {
-  const text = (textArea.value || '').trim();
-  if (!text) {
-    return alert('留言內容不可為空');
-  }
+function convertPostsToCsv(posts) {
+  const headers = ['日期', '作者', '心情', '隱私', '顏色', '文字', '是否有圖片'];
+  const rows = posts.map(post => [
+    new Date(post.createdAt).toLocaleString(),
+    post.authorName || '',
+    post.mood || '',
+    post.private ? '私人' : '公開',
+    post.color || '',
+    post.text.replace(/\r?\n/g, ' '),
+    post.image ? '是' : '否'
+  ]);
 
-  try {
-    const response = await fetch(`/api/posts/${postId}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      return alert(data.error || '無法新增留言');
-    }
-    textArea.value = '';
-    loadPosts();
-  } catch (err) {
-    alert('網路錯誤，請稍後再試。');
-  }
+  const escapeCsv = value => {
+    const text = String(value).replace(/"/g, '""');
+    return `"${text}"`;
+  };
+
+  return [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\n');
 }
 
-async function handleDeleteComment(postId, commentId) {
-  if (!window.confirm('確定要刪除這則留言嗎？')) return;
-  try {
-    const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, { method: 'DELETE' });
-    const data = await response.json();
-    if (!response.ok) {
-      return alert(data.error || '刪除失敗');
-    }
-    loadPosts();
-  } catch (err) {
-    alert('網路錯誤，請稍後再試。');
+function exportCsv() {
+  const posts = getVisiblePosts(getPosts());
+  if (!posts.length) {
+    setStatus(statusEl, '目前沒有可匯出的便利貼。', 'error');
+    return;
   }
+
+  const csv = convertPostsToCsv(posts);
+  downloadCsv('uwu-life-journal.csv', csv);
+  setStatus(statusEl, '試算表資料已準備下載。', 'success');
+}
+
+function deleteUser(userId) {
+  if (!currentUser || currentUser.role !== 'admin' || userId === currentUser.id) return;
+  const users = getUsers().filter(user => user.id !== userId);
+  saveUsers(users);
+  renderAdminUsers();
 }
 
 postsContainer.addEventListener('click', event => {
-  if (event.target.matches('.edit-post')) {
-    const postId = event.target.dataset.id;
-    const postCard = event.target.closest('.post-card');
-    const currentText = postCard.querySelector('.post-text').textContent;
-    handleEditPost(postId, currentText);
-  }
-
   if (event.target.matches('.delete-post')) {
-    handleDeletePost(event.target.dataset.id);
-  }
-
-  if (event.target.matches('.delete-comment')) {
-    handleDeleteComment(event.target.dataset.postId, event.target.dataset.commentId);
+    deletePost(event.target.dataset.id);
   }
 });
 
-postsContainer.addEventListener('submit', event => {
-  if (!event.target.matches('.comment-form')) return;
-  event.preventDefault();
-  const postId = event.target.dataset.postId;
-  const textArea = event.target.querySelector('textarea[name="text"]');
-  handleAddComment(postId, textArea);
+adminUsers.addEventListener('click', event => {
+  if (event.target.matches('.delete-user')) {
+    deleteUser(event.target.dataset.id);
+  }
 });
 
 showLoginBtn.addEventListener('click', () => setActiveTab(true));
@@ -324,7 +434,7 @@ showRegisterBtn.addEventListener('click', () => setActiveTab(false));
 loginForm.addEventListener('submit', loginUser);
 registerForm.addEventListener('submit', registerUser);
 logoutBtn.addEventListener('click', logoutUser);
+exportCsvBtn.addEventListener('click', exportCsv);
 form.addEventListener('submit', submitPost);
 
-loadCurrentUser();
-loadPosts();
+initializeApp();

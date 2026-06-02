@@ -3,77 +3,105 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>uwu 分享牆</title>
+    <title>生活記事本</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="container">
       <header>
-        <h1>uwu 分享牆</h1>
-        <p>任何人都可以分享文字與圖片。</p>
+        <h1>生活記事本</h1>
+        <p>建立帳號後開始記錄生活，便利貼可選顏色、可刪除。</p>
       </header>
 
-      <section class="auth-card">
-        <div id="authForms" class="auth-stack">
-          <div class="auth-switch">
-            <button type="button" id="showLoginBtn" class="active">登入</button>
-            <button type="button" id="showRegisterBtn">註冊</button>
-          </div>
-
-          <form id="loginForm">
-            <label for="loginEmail">信箱</label>
-            <input id="loginEmail" name="email" type="email" placeholder="example@mail.com" required />
-
-            <label for="loginPassword">密碼</label>
-            <input id="loginPassword" name="password" type="password" placeholder="密碼" required />
-
-            <button type="submit">登入</button>
-            <div id="loginStatus" class="status"></div>
-          </form>
-
-          <form id="registerForm" class="hidden">
-            <label for="registerName">名稱</label>
-            <input id="registerName" name="name" type="text" placeholder="你的暱稱" required />
-
-            <label for="registerEmail">信箱</label>
-            <input id="registerEmail" name="email" type="email" placeholder="example@mail.com" required />
-
-            <label for="registerPassword">密碼</label>
-            <input id="registerPassword" name="password" type="password" placeholder="至少 6 個字元" required />
-
-            <button type="submit">註冊</button>
-            <div id="registerStatus" class="status"></div>
-          </form>
+      <section class="auth-card" id="authForms">
+        <div class="auth-switch">
+          <button type="button" id="showLoginBtn" class="active">登入</button>
+          <button type="button" id="showRegisterBtn">註冊</button>
         </div>
+
+        <form id="loginForm" class="auth-form">
+          <label for="loginEmail">信箱</label>
+          <input id="loginEmail" name="email" type="email" placeholder="example@mail.com" required />
+
+          <label for="loginPassword">密碼</label>
+          <input id="loginPassword" name="password" type="password" placeholder="密碼" required />
+
+          <button type="submit">登入</button>
+          <div id="loginStatus" class="status"></div>
+        </form>
+
+        <form id="registerForm" class="auth-form hidden">
+          <label for="registerName">名稱</label>
+          <input id="registerName" name="name" type="text" placeholder="你的暱稱" required />
+
+          <label for="registerEmail">信箱</label>
+          <input id="registerEmail" name="email" type="email" placeholder="example@mail.com" required />
+
+          <label for="registerPassword">密碼</label>
+          <input id="registerPassword" name="password" type="password" placeholder="至少 6 個字元" required />
+
+          <button type="submit">註冊</button>
+          <div id="registerStatus" class="status"></div>
+        </form>
 
         <div id="userPanel" class="user-panel hidden">
           <p>已登入：<strong id="userName"></strong> (<span id="userRole"></span>)</p>
           <div class="user-actions">
+            <button id="exportCsvBtn" type="button" class="button-secondary">匯出試算表</button>
             <button id="logoutBtn" type="button">登出</button>
-            <a id="adminLink" class="admin-link hidden" href="admin.html">管理者頁面</a>
           </div>
         </div>
       </section>
 
       <section class="form-card hidden" id="shareSection">
         <form id="shareForm">
-          <label for="text">文字內容</label>
-          <textarea id="text" name="text" rows="4" placeholder="寫下一段想分享的話..." required></textarea>
+          <label for="text">今日記事</label>
+          <textarea id="text" name="text" rows="4" placeholder="寫下今天的事、心情或靈感..." required></textarea>
+
+          <label for="mood">當天心情</label>
+          <select id="mood" name="mood">
+            <option value="開心">開心</option>
+            <option value="平靜">平靜</option>
+            <option value="焦慮">焦慮</option>
+            <option value="難過">難過</option>
+            <option value="期待">期待</option>
+          </select>
+
+          <label for="color">便利貼顏色</label>
+          <select id="color" name="color">
+            <option value="#fef192">亮黃</option>
+            <option value="#a7f3d0">薄荷綠</option>
+            <option value="#bfdbfe">天空藍</option>
+            <option value="#fecaca">粉紅</option>
+            <option value="#ddd6fe">薰衣草</option>
+          </select>
+
+          <label for="privacy">便利貼隱私</label>
+          <select id="privacy" name="privacy">
+            <option value="public">公開</option>
+            <option value="private">私人</option>
+          </select>
 
           <label for="image">附加圖片（選填）</label>
           <input id="image" name="image" type="file" accept="image/*" />
 
-          <button type="submit">分享貼文</button>
+          <button type="submit">儲存便利貼</button>
           <div id="status" class="status"></div>
         </form>
       </section>
 
-      <section class="info-card" id="loginRequired">
-        <p>請先登入或註冊，然後才能分享貼文與留言。</p>
+      <section class="info-card hidden" id="loginRequired">
+        <p>請先登入或註冊，才能新增便利貼。</p>
+      </section>
+
+      <section class="admin-card hidden" id="adminSection">
+        <h2>管理員專區</h2>
+        <p>管理員可以查看所有帳號。</p>
+        <div id="adminUsers"></div>
       </section>
 
       <section class="posts-card">
-        <h2>最新貼文</h2>
+        <h2>便利貼牆</h2>
         <div id="posts"></div>
       </section>
     </div>

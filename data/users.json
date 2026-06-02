@@ -1,0 +1,10 @@
+[
+  {
+    "id": "1779174670227",
+    "name": "admin",
+    "email": "admin@uwu.local",
+    "passwordHash": "$2a$10$BgwDvqazXAopdUEqLrU/K.MB5d2lKy3qHI4tEvvCHpIt7Q6vGQivO",
+    "role": "admin",
+    "createdAt": "2026-05-19T07:11:10.227Z"
+  }
+]
