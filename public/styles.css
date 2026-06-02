@@ -1,0 +1,243 @@
+:root {
+  --bg: #f7f3ff;
+  --surface: #ffffff;
+  --text: #222;
+  --muted: #6b7280;
+  --primary: #7c3aed;
+  --border: #e5e7eb;
+  --success: #16a34a;
+  --error: #dc2626;
+  --surface-strong: #eef1ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #eef2ff, #f7f3ff);
+  color: var(--text);
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.form-card,
+.posts-card,
+.auth-card,
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 20px 80px rgba(99, 102, 241, 0.08);
+  margin-bottom: 20px;
+}
+
+.auth-stack,
+.user-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.auth-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.auth-switch button {
+  flex: 1;
+  background: var(--surface-strong);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+
+.auth-switch button.active {
+  background: var(--primary);
+  color: white;
+}
+
+.user-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.user-actions {
+  align-items: center;
+}
+
+.admin-link {
+  color: white;
+  text-decoration: none;
+}
+
+.hidden {
+  display: none;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+input[type="file"] {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 14px;
+  background: var(--primary);
+  color: white;
+  padding: 14px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.button-secondary {
+  background: #6366f1;
+}
+
+.button-danger {
+  background: var(--error);
+}
+
+button:hover {
+  opacity: 0.95;
+}
+
+.post-card {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+}
+
+.post-card:last-child {
+  border-bottom: none;
+}
+
+.post-meta,
+.comment-meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.post-text,
+.comment-text {
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+.post-image {
+  margin-top: 16px;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.post-image img {
+  width: 100%;
+  display: block;
+}
+
+.post-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.comment-list {
+  margin-top: 18px;
+}
+
+.comment-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: #fafafa;
+}
+
+.comment-form {
+  margin-top: 16px;
+}
+
+.comment-form textarea {
+  margin-bottom: 12px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  border: 1px solid var(--border);
+  padding: 12px;
+  text-align: left;
+}
+
+.admin-table th {
+  background: var(--surface-strong);
+}
+
+.status {
+  margin-top: 12px;
+  font-weight: 600;
+}
+
+.status.success {
+  color: var(--success);
+}
+
+.status.error {
+  color: var(--error);
+}
+
+.empty,
+.error {
+  color: var(--muted);
+  margin: 0;
+}

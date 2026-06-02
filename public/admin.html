@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>uwu 管理者頁面</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>管理者儀表板</h1>
+        <p>這裡可以管理使用者與貼文。</p>
+      </header>
+
+      <section class="info-card">
+        <p><a href="/">返回分享牆</a></p>
+      </section>
+
+      <section class="form-card">
+        <div id="adminStatus" class="status"></div>
+        <div id="adminContent" class="hidden">
+          <section class="posts-card">
+            <h2>使用者清單</h2>
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>名稱</th>
+                  <th>信箱</th>
+                  <th>角色</th>
+                  <th>建立時間</th>
+                  <th>動作</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable"></tbody>
+            </table>
+          </section>
+
+          <section class="posts-card">
+            <h2>貼文管理</h2>
+            <div id="adminPosts"></div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <script src="admin.js"></script>
+  </body>
+</html>
