@@ -7,6 +7,8 @@ const userName = document.getElementById('userName');
 const userRole = document.getElementById('userRole');
 const logoutBtn = document.getElementById('logoutBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
+const importCsvBtn = document.getElementById('importCsvBtn');
+const importCsvInput = document.getElementById('importCsvInput');
 const shareSection = document.getElementById('shareSection');
 const loginRequired = document.getElementById('loginRequired');
 const adminSection = document.getElementById('adminSection');
@@ -378,6 +380,54 @@ function downloadCsv(filename, csv) {
   URL.revokeObjectURL(url);
 }
 
+function parseCsvLine(line) {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (line[i + 1] === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += char;
+      }
+    } else if (char === '"') {
+      inQuotes = true;
+    } else if (char === ',') {
+      values.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  values.push(current);
+  return values;
+}
+
+function parseCsv(content) {
+  const lines = content.split(/\r?\n/).filter(line => line.trim());
+  if (lines.length < 2) return [];
+
+  const headers = parseCsvLine(lines[0]).map(header => header.trim());
+  return lines.slice(1).map(line => {
+    const values = parseCsvLine(line);
+    const item = {};
+    headers.forEach((header, index) => {
+      item[header] = values[index] || '';
+    });
+    return item;
+  });
+}
+
 function convertPostsToCsv(posts) {
   const headers = ['日期', '作者', '心情', '隱私', '顏色', '文字', '是否有圖片'];
   const rows = posts.map(post => [
@@ -410,6 +460,58 @@ function exportCsv() {
   setStatus(statusEl, '試算表資料已準備下載。', 'success');
 }
 
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file, 'utf-8');
+  });
+}
+
+async function importCsv(event) {
+  if (!currentUser) {
+    setStatus(statusEl, '請先登入再匯入試算表。', 'error');
+    return;
+  }
+
+  const file = event.target.files[0];
+  if (!file) return;
+
+  let content;
+  try {
+    content = await readFileAsText(file);
+  } catch (err) {
+    setStatus(statusEl, '讀取 CSV 檔案失敗。', 'error');
+    return;
+  }
+
+  const rows = parseCsv(content);
+  if (!rows.length) {
+    setStatus(statusEl, 'CSV 檔案格式不正確或內容為空。', 'error');
+    return;
+  }
+
+  const posts = getPosts();
+  const importedPosts = rows.map(row => ({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    authorId: currentUser.id,
+    authorName: row['作者'] || currentUser.name,
+    text: row['文字'] || '',
+    mood: row['心情'] || '',
+    color: row['顏色'] || '#fef192',
+    private: row['隱私'] === '私人',
+    image: null,
+    createdAt: row['日期'] ? new Date(row['日期']).toISOString() : new Date().toISOString()
+  }));
+
+  savePosts([...importedPosts, ...posts]);
+  form.reset();
+  importCsvInput.value = '';
+  renderPosts(getPosts());
+  setStatus(statusEl, `已匯入 ${importedPosts.length} 筆便利貼。`, 'success');
+}
+
 function deleteUser(userId) {
   if (!currentUser || currentUser.role !== 'admin' || userId === currentUser.id) return;
   const users = getUsers().filter(user => user.id !== userId);
@@ -435,6 +537,8 @@ loginForm.addEventListener('submit', loginUser);
 registerForm.addEventListener('submit', registerUser);
 logoutBtn.addEventListener('click', logoutUser);
 exportCsvBtn.addEventListener('click', exportCsv);
+importCsvBtn.addEventListener('click', () => importCsvInput.click());
+importCsvInput.addEventListener('change', importCsv);
 form.addEventListener('submit', submitPost);
 
 initializeApp();
